@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Steam-Bones Jazz Club</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rye&display=swap');
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050404;
+            color: #d4b483;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #canvas-container {
+            position: relative;
+            flex: 1;
+            background: #000;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        #start-overlay {
+            background: rgba(10, 5, 0, 0.95);
+            padding: 30px;
+            border: 2px solid #c19a6b;
+            border-radius: 10px;
+            text-align: center;
+            pointer-events: auto;
+            box-shadow: 0 0 50px #c19a6b;
+            max-width: 90%;
+        }
+
+        h1 {
+            font-family: 'Rye', serif;
+            font-size: 2.5rem;
+            margin: 0 0 15px 0;
+            color: #e6c288;
+            text-shadow: 3px 3px 0px #3e2723;
+        }
+
+        p { margin-bottom: 25px; font-size: 1rem; color: #a69b8d; }
+
+        button.start-btn {
+            background: linear-gradient(to bottom, #c19a6b, #8d6e4b);
+            border: 2px solid #5d4037;
+            color: #2b1d0e;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            font-family: 'Rye', serif;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 4px;
+        }
+
+        #controls {
+            flex-shrink: 0;
+            background: #120e0b;
+            border-top: 4px solid #5d4037;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            padding: 10px 20px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.9);
+            z-index: 20;
+            gap: 15px;
+            overflow-x: auto;
+        }
+
+        #mixer {
+            display: flex;
+            flex: 1;
+            justify-content: space-around;
+            gap: 8px;
+            min-width: 300px;
+        }
+
+        .track-control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            background: #1e1511;
+            padding: 8px;
+            border: 1px solid #44332a;
+            border-radius: 4px;
+            min-width: 60px;
+            height: 90px;
+        }
+
+        .track-name {
+            font-family: 'Rye', serif;
+            color: #c19a6b;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .slider-container {
+            width: 100%;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #000;
+            outline: none;
+            border-radius: 3px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #c19a6b;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid #3e2723;
+        }
+
+        button.toggle-btn {
+            background: transparent;
+            border: 1px solid #5d4037;
+            color: #5d4037;
+            cursor: pointer;
+            font-size: 0.65rem;
+            padding: 2px 4px;
+            width: 100%;
+            margin-top: 4px;
+            font-weight: bold;
+        }
+
+        button.toggle-btn.active {
+            background: #5d4037;
+            color: #e6c288;
+        }
+
+        #applause-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-left: 10px;
+            border-left: 2px solid #3e2723;
+        }
+
+        #applause-btn {
+            background: radial-gradient(circle, #ffd700, #b8860b);
+            border: 3px solid #fff;
+            color: #4b3621;
+            font-family: 'Rye', serif;
+            font-size: 1rem;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 15px #ffd700;
+            transition: transform 0.1s, box-shadow 0.1s;
+            text-transform: uppercase;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        #applause-btn:active {
+            transform: scale(0.95);
+            background: #b8860b;
+        }
+        
+        #applause-btn:hover {
+            box-shadow: 0 0 25px #ffd700;
+        }
+
+        .hidden { display: none !important; }
+        
+        .crt-lines {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.3;
+        }
+
+        @media (max-width: 600px) {
+            #controls { flex-wrap: wrap; justify-content: center; height: auto; padding-bottom: 20px; }
+            #mixer { width: 100%; margin-bottom: 10px; justify-content: space-between; }
+            #applause-wrapper { border-left: none; width: 100%; margin-top: 5px; }
+            #applause-btn { width: 100%; height: 50px; border-radius: 8px; }
+            .track-control { min-width: 45px; padding: 4px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <canvas id="stage"></canvas>
+        <div class="crt-lines"></div>
+        <div id="ui-layer">
+            <div id="start-overlay">
+                <h1>Steam-Bones Jazz</h1>
+                <p>Generative Free Jazz &bull; Steampunk Club</p>
+                <p>Use headphones. Applaud to unlock complexity.</p>
+                <button class="start-btn" id="start-btn">Start The Jam</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="controls" class="hidden">
+        <div id="mixer"></div>
+        <div id="applause-wrapper">
+            <button id="applause-btn">Applaud</button>
+        </div>
+    </div>
+
+    <script>
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let actx;
+        let masterGain;
+        let isPlaying = false;
+        
+        // --- GLOBAL STATE ---
+        let chaosLevel = 0; 
+        let applauseCount = 0;
+        let tempo = 110;
+        let floorHeightOffset = 0;
+        
+        // Timing
+        let scheduleAheadTime = 0.1; 
+        let nextNoteTime = 0.0;
+        let current16thNote = 0; // Global ticker
+        let phraseLength = 16; // Starts at 1 bar, grows with chaos
+        let barCount = 0;
+        
+        // Music Theory
+        const SCALE_BLUES_C = [36, 39, 41, 42, 43, 46, 48, 51, 53, 54, 55, 58, 60, 63, 65, 66, 67, 70, 72];
+        const SCALE_DORIAN = [36, 38, 39, 41, 43, 45, 46, 48, 50, 51, 53, 55, 57, 58, 60];
+        const SCALE_CHROMATIC = Array.from({length: 48}, (_, i) => 36 + i);
+        
+        // --- JAM MANAGER ---
+        const JamManager = {
+            soloist: null,
+            currentBar: 0,
+            
+            update(bars) {
+                this.currentBar = bars;
+                if (bars % 8 === 0) { 
+                    const soloists = ['trumpet', 'sax', 'guitar', 'piano'];
+                    // Probability to have a soloist increases with chaos
+                    if (Math.random() < 0.3 + (chaosLevel * 0.05)) {
+                        this.soloist = soloists[Math.floor(Math.random() * soloists.length)];
+                    } else if (chaosLevel > 10) {
+                        this.soloist = 'everyone';
+                    } else {
+                        this.soloist = null;
+                    }
+                }
+            },
+            
+            isSoloing(instName) {
+                if (this.soloist === 'everyone') return true;
+                return this.soloist === instName.toLowerCase();
+            }
+        };
+
+        function midiToFreq(midi) {
+            return 440 * Math.pow(2, (midi - 69) / 12);
+        }
+
+        // --- SYNTH CLASSES ---
+
+        class Instrument {
+            constructor(name, volume = 0.7) {
+                this.name = name;
+                this.volume = volume;
+                this.muted = false;
+                this.gainNode = null;
+                this.analyser = null;
+            }
+
+            init(ctx, dest) {
+                this.ctx = ctx;
+                this.gainNode = ctx.createGain();
+                this.gainNode.gain.value = this.volume;
+                this.analyser = ctx.createAnalyser();
+                this.analyser.fftSize = 32;
+                this.gainNode.connect(this.analyser);
+                this.analyser.connect(dest);
+            }
+
+            setVolume(val) {
+                this.volume = val;
+                if(this.gainNode && !this.muted) this.gainNode.gain.setTargetAtTime(val, this.ctx.currentTime, 0.01);
+            }
+
+            toggleMute() {
+                this.muted = !this.muted;
+                if(this.gainNode) {
+                    this.gainNode.gain.setTargetAtTime(this.muted ? 0 : this.volume, this.ctx.currentTime, 0.01);
+                }
+                return this.muted;
+            }
+
+            getAmplitude() {
+                if(!this.analyser) return 0;
+                const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                this.analyser.getByteTimeDomainData(dataArray);
+                let sum = 0;
+                for(let i = 0; i < dataArray.length; i++) {
+                    const v = (dataArray[i] - 128) / 128; 
+                    sum += v*v;
+                }
+                return Math.sqrt(sum / dataArray.length);
+            }
+        }
+
+        class Drums extends Instrument {
+            play(time, type, velocity) {
+                if (this.muted) return;
+                
+                if (type === 'kick') {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.frequency.setValueAtTime(150, time);
+                    osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.5);
+                    gain.gain.setValueAtTime(velocity, time);
+                    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+                    osc.connect(gain); gain.connect(this.gainNode);
+                    osc.start(time); osc.stop(time + 0.5);
+                } 
+                else if (type === 'snare') {
+                    const noise = this.ctx.createBufferSource();
+                    const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.5, this.ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+                    noise.buffer = buffer;
+                    const noiseFilter = this.ctx.createBiquadFilter();
+                    noiseFilter.type = 'highpass'; noiseFilter.frequency.value = 800;
+                    const noiseGain = this.ctx.createGain();
+                    noiseGain.gain.setValueAtTime(velocity, time);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+                    noise.connect(noiseFilter).connect(noiseGain).connect(this.gainNode);
+                    noise.start(time);
+                    
+                    const osc = this.ctx.createOscillator();
+                    const oscGain = this.ctx.createGain();
+                    osc.frequency.setValueAtTime(200, time);
+                    oscGain.gain.setValueAtTime(velocity * 0.6, time);
+                    oscGain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+                    osc.connect(oscGain).connect(this.gainNode);
+                    osc.start(time); osc.stop(time + 0.15);
+                } 
+                else { // Hat
+                    const noise = this.ctx.createBufferSource();
+                    const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.5, this.ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+                    noise.buffer = buffer;
+                    const noiseFilter = this.ctx.createBiquadFilter();
+                    noiseFilter.type = 'highpass'; noiseFilter.frequency.value = 5000;
+                    const noiseGain = this.ctx.createGain();
+                    const dur = type === 'openhat' ? 0.3 : 0.05;
+                    noiseGain.gain.setValueAtTime(velocity*0.3, time);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.01, time + dur);
+                    noise.connect(noiseFilter).connect(noiseGain).connect(this.gainNode);
+                    noise.start(time);
+                }
+            }
+        }
+
+        class ToneInst extends Instrument {
+            play(time, midi, duration, type='sawtooth') {
+                if (this.muted) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                const filter = this.ctx.createBiquadFilter();
+
+                let detune = 0;
+                if(chaosLevel > 8) detune = (Math.random() - 0.5) * (chaosLevel * 5);
+                
+                osc.type = type;
+                osc.frequency.setValueAtTime(midiToFreq(midi), time);
+                osc.detune.value = detune;
+
+                if(this.name === 'Piano') {
+                    osc.type = 'triangle';
+                    filter.frequency.value = 2500;
+                    gain.gain.setValueAtTime(0, time);
+                    gain.gain.linearRampToValueAtTime(0.6, time + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(0.01, time + duration * 2.0);
+                } else if (this.name === 'Bass') {
+                    osc.type = 'sawtooth';
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(400, time);
+                    filter.frequency.exponentialRampToValueAtTime(100, time + duration * 0.5);
+                    gain.gain.setValueAtTime(0.8, time);
+                    gain.gain.linearRampToValueAtTime(0, time + duration);
+                } else {
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(800, time);
+                    filter.frequency.linearRampToValueAtTime(3000, time + 0.1); 
+                    gain.gain.setValueAtTime(0, time);
+                    gain.gain.linearRampToValueAtTime(0.5, time + 0.05);
+                    gain.gain.linearRampToValueAtTime(0, time + duration);
+                }
+                osc.connect(filter).connect(gain).connect(this.gainNode);
+                osc.start(time); osc.stop(time + duration * 3);
+            }
+        }
+
+        // --- DYNAMIC GENOME SYSTEM ---
+
+        class Genome {
+            constructor() {
+                this.sequence = [];
+                this.extend(16);
+            }
+
+            extend(targetLength) {
+                const currentLength = this.sequence.length;
+                if(targetLength <= currentLength) return;
+                
+                // If sequence is empty, initialize it first
+                if (currentLength === 0) {
+                    for(let i=0; i<targetLength; i++) {
+                        this.sequence.push(this.createGene());
+                    }
+                } else {
+                    // Extend by copying existing patterns
+                    for(let i=currentLength; i<targetLength; i++) {
+                        const sourceStep = this.sequence[i % currentLength];
+                        const newStep = { ...sourceStep };
+                        if(Math.random() > 0.7) {
+                            newStep.note += (Math.random() > 0.5 ? 2 : -2);
+                        }
+                        this.sequence.push(newStep);
+                    }
+                }
+            }
+
+            createGene() {
+                let dur = 1; // Default 16th
+                const r = Math.random();
+                
+                if (chaosLevel < 5) {
+                    if(r > 0.5) dur = 2; // 8th
+                    else if (r > 0.8) dur = 4; // Quarter
+                } else {
+                    if(r > 0.4 && r < 0.6) dur = 2; // 8th
+                    else if (r >= 0.6 && r < 0.8) dur = 3; // Dotted 8th
+                    else if (r >= 0.8 && r < 0.9) dur = 4; // Quarter
+                    else if (r >= 0.9) dur = 6; // Dotted Quarter
+                }
+
+                return {
+                    active: Math.random() > 0.5,
+                    note: Math.floor(Math.random() * 12), // Scale degree
+                    duration: dur
+                };
+            }
+
+            mutate() {
+                const rate = 0.05 + (chaosLevel * 0.02); 
+                
+                this.sequence.forEach((step, idx) => {
+                    if(Math.random() < rate) {
+                        step.active = !step.active;
+                    }
+                    if(Math.random() < rate) {
+                        step.note += (Math.random() > 0.5 ? 1 : -1);
+                    }
+                    if(Math.random() < rate * 0.5) {
+                        const roll = Math.random();
+                        if(roll < 0.3) step.duration = 1;
+                        else if (roll < 0.6) step.duration = 2;
+                        else if (roll < 0.8) step.duration = 3; 
+                        else step.duration = 4;
+                    }
+                });
+            }
+        }
+
+        const instruments = {
+            drums: new Drums('Drums', 0.8),
+            bass: new ToneInst('Bass', 0.8),
+            piano: new ToneInst('Piano', 0.6),
+            trumpet: new ToneInst('Trumpet', 0.5),
+            sax: new ToneInst('Sax', 0.5),
+            guitar: new ToneInst('Guitar', 0.5)
+        };
+
+        const genomes = {
+            bass: new Genome(), piano: new Genome(), trumpet: new Genome(), sax: new Genome(), guitar: new Genome()
+        };
+
+        // Initialize Bass Groove
+        // Ensure bass genome has data
+        if(genomes.bass.sequence.length > 0) {
+            genomes.bass.sequence.forEach((s,i) => { 
+                s.active = (i%4===0) || (i%4===2 && Math.random()>0.5); 
+                s.duration = 2; 
+            });
+        }
+
+        function scheduler() {
+            if(actx.state === 'suspended') actx.resume();
+
+            while (nextNoteTime < actx.currentTime + scheduleAheadTime) {
+                scheduleNote(current16thNote, nextNoteTime);
+                nextNextNote();
+            }
+            if(isPlaying) requestAnimationFrame(scheduler);
+        }
+
+        function nextNextNote() {
+            const secondsPerBeat = 60.0 / tempo;
+            nextNoteTime += 0.25 * secondsPerBeat;
+            current16thNote++;
+        }
+
+        function evolveMusic() {
+            const currentBar = Math.floor(current16thNote / 16);
+            
+            if (currentBar > barCount) {
+                barCount = currentBar;
+                JamManager.update(barCount);
+                
+                if (barCount % 2 === 0) {
+                    Object.values(genomes).forEach(g => g.mutate());
+                }
+                
+                let targetLen = 16;
+                if(chaosLevel > 5) targetLen = 32;
+                if(chaosLevel > 12) targetLen = 48;
+                if(chaosLevel > 20) targetLen = 64;
+                
+                if (targetLen > phraseLength) {
+                    phraseLength = targetLen;
+                    Object.values(genomes).forEach(g => g.extend(phraseLength));
+                }
+
+                if(chaosLevel > 0) {
+                    tempo += (Math.random() - 0.4) * Math.min(chaosLevel, 5); 
+                    if(tempo < 80) tempo = 80; if(tempo > 260) tempo = 260;
+                }
+            }
+        }
+
+        function scheduleNote(tick, time) {
+            evolveMusic(); 
+            
+            const secondsPerBeat = 60.0 / tempo;
+            const stepDur = 0.25 * secondsPerBeat;
+            
+            const loopPos = tick % phraseLength;
+            const barPos = tick % 16;
+
+            // DRUMS
+            let playKick = (barPos === 0 || barPos === 8);
+            let playSnare = (barPos === 4 || barPos === 12);
+            let playHat = (barPos % 2 === 0);
+
+            if(chaosLevel > 2 && Math.random() < 0.1 * chaosLevel) {
+                if(Math.random()>0.5) playKick = true;
+                if(Math.random()>0.5) playSnare = true;
+            }
+
+            if(playKick) instruments.drums.play(time, 'kick', 0.9);
+            if(playSnare) instruments.drums.play(time, 'snare', 0.8);
+            if(playHat) instruments.drums.play(time, 'closedhat', 0.3);
+            if(Math.random() > 0.8) instruments.drums.play(time, 'closedhat', 0.1); 
+
+            // MELODIC
+            let currentScale = chaosLevel > 15 ? SCALE_CHROMATIC : (chaosLevel > 5 ? SCALE_DORIAN : SCALE_BLUES_C);
+            
+            ['bass', 'piano', 'trumpet', 'sax', 'guitar'].forEach((name) => {
+                const g = genomes[name];
+                // Safety check: if genome is corrupted, use a safe default active state
+                if(!g.sequence || g.sequence.length === 0) return;
+
+                const gene = g.sequence[loopPos % g.sequence.length]; 
+                
+                let shouldPlay = gene.active;
+                
+                if (name !== 'bass') { 
+                    if (JamManager.soloist) {
+                        if (JamManager.soloist === 'everyone') {
+                            if(Math.random() < 0.2) shouldPlay = true;
+                        } else if (JamManager.isSoloing(name)) {
+                            if(!shouldPlay && Math.random() < 0.4) shouldPlay = true;
+                        } else {
+                            if(name === 'piano' || name === 'guitar') {
+                                shouldPlay = shouldPlay && (Math.random() > 0.6);
+                            } else {
+                                shouldPlay = shouldPlay && (Math.random() > 0.8);
+                            }
+                        }
+                    } else {
+                         if(name === 'trumpet' && barCount % 4 !== 0) shouldPlay = false;
+                    }
+                }
+
+                if (shouldPlay) {
+                    let noteIndex = Math.abs(gene.note) % currentScale.length;
+                    let midi = currentScale[noteIndex];
+                    
+                    if(name === 'bass') midi -= 12; else midi += 12;
+                    if(JamManager.isSoloing(name) && Math.random() > 0.5) midi += 12;
+
+                    instruments[name].play(time, midi, gene.duration * stepDur, name === 'piano' ? 'triangle' : 'sawtooth');
+                }
+            });
+        }
+
+        function triggerApplause() {
+            chaosLevel++;
+            applauseCount++;
+            tempo += 2; 
+            floorHeightOffset = Math.min(height * 0.3, floorHeightOffset + 3); 
+
+            const bufSz = actx.sampleRate * 2;
+            const buffer = actx.createBuffer(1, bufSz, actx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufSz; i++) { data[i] = (Math.random() * 2 - 1) * Math.pow(1 - (i/bufSz), 4); }
+            const noise = actx.createBufferSource();
+            noise.buffer = buffer;
+            const gain = actx.createGain(); gain.gain.value = 0.5;
+            const filter = actx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 800;
+            noise.connect(filter).connect(gain).connect(masterGain);
+            noise.start();
+
+            for(let i=0; i<40; i++) fallingMoney.push(new Money());
+        }
+
+        // --- VISUALIZATION ---
+
+        const canvas = document.getElementById('stage');
+        const ctx = canvas.getContext('2d');
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        
+        let fallingMoney = [];
+        let piledMoney = [];
+        let gears = [];
+        let band = [];
+
+        class Gear {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.r = 20 + Math.random() * 80;
+                this.teeth = 8 + Math.floor(Math.random() * 8);
+                this.speed = (Math.random() - 0.5) * 0.02;
+                this.angle = 0;
+            }
+            draw(ctx) {
+                this.angle += this.speed + (this.speed * chaosLevel * 0.3); 
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.fillStyle = '#1e1410';
+                for(let i=0; i<this.teeth; i++) {
+                    ctx.save();
+                    ctx.rotate((Math.PI * 2 / this.teeth) * i);
+                    ctx.fillRect(-this.r/4, -this.r*1.2, this.r/2, this.r/3);
+                    ctx.restore();
+                }
+                ctx.beginPath();
+                ctx.arc(0, 0, this.r, 0, Math.PI*2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(0, 0, this.r*0.3, 0, Math.PI*2);
+                ctx.fillStyle = '#050404';
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Money {
+            constructor(isStatic=false, x=0, y=0) {
+                if(isStatic) {
+                    this.x = x; this.y = y; this.type = Math.random() > 0.5 ? 'bill' : 'coin'; this.rot = Math.random()*Math.PI;
+                    this.isStatic = true;
+                } else {
+                    this.x = Math.random() * width;
+                    this.y = -50;
+                    this.vx = (Math.random() - 0.5) * 10;
+                    this.vy = 5 + Math.random() * 5;
+                    this.rot = Math.random() * Math.PI;
+                    this.vRot = (Math.random() - 0.5) * 0.2;
+                    this.type = Math.random() > 0.5 ? 'bill' : 'coin';
+                    this.isStatic = false;
+                }
+            }
+            update() {
+                if(this.isStatic) return;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.rot += this.vRot;
+                this.vy += 0.2; 
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rot);
+                if(this.type === 'bill') {
+                    ctx.fillStyle = '#85bb65'; ctx.strokeStyle = '#eeffee';
+                    ctx.fillRect(-15, -8, 30, 16); ctx.strokeRect(-15, -8, 30, 16);
+                    ctx.fillStyle = '#004400'; ctx.font = '10px sans-serif'; ctx.fillText('$', -3, 3);
+                } else {
+                    ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(0,0, 8, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#b8860b'; ctx.stroke();
+                }
+                ctx.restore();
+            }
+        }
+
+        class Musician {
+            constructor(name) {
+                this.name = name;
+                this.x = Math.random() * (width || 500);
+                this.y = (height || 500) * 0.7;
+                this.targetX = this.x;
+                this.targetY = this.y;
+                this.vx = 0;
+                this.vy = 0;
+                this.radius = 40; 
+            }
+
+            update(others) {
+                if (instruments[this.name.toLowerCase()].muted) {
+                    this.vx = 0; this.vy = 0; return; 
+                }
+
+                const distToTarget = Math.hypot(this.targetX - this.x, this.targetY - this.y);
+                if (distToTarget < 10 || Math.random() < 0.01) {
+                    this.targetX = 50 + Math.random() * (width - 100);
+                    const floorTop = height * 0.6;
+                    const floorBottom = height - floorHeightOffset - 30; 
+                    this.targetY = floorTop + Math.random() * (Math.max(10, floorBottom - floorTop));
+                }
+
+                const angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
+                this.vx = Math.cos(angle) * 0.8;
+                this.vy = Math.sin(angle) * 0.8;
+
+                others.forEach(other => {
+                    if (other === this) return;
+                    const dx = this.x - other.x;
+                    const dy = this.y - other.y;
+                    const dist = Math.hypot(dx, dy);
+                    const minDist = this.radius + other.radius + 10;
+                    if (dist < minDist && dist > 0) {
+                        const pushForce = (minDist - dist) / minDist;
+                        this.vx += (dx / dist) * pushForce * 1.5;
+                        this.vy += (dy / dist) * pushForce * 1.5;
+                    }
+                });
+
+                this.x += this.vx;
+                this.y += this.vy;
+                this.x = Math.max(40, Math.min(width - 40, this.x));
+                const floorTop = height * 0.6;
+                const floorBottom = height - floorHeightOffset - 30;
+                this.y = Math.max(floorTop, Math.min(floorBottom, this.y));
+            }
+
+            draw(ctx, amp) {
+                const sizeMult = 1.0 + (applauseCount * 0.05);
+                const jitter = chaosLevel * 1.5; 
+                const jitterX = (Math.random() - 0.5) * jitter;
+                const jitterY = (Math.random() - 0.5) * jitter;
+                const sway = Math.sin(Date.now() / (400 - chaosLevel*10)) * (10 + chaosLevel);
+                const bob = Math.abs(Math.sin(Date.now() / 300)) * (5 + amp*20);
+
+                ctx.save();
+                ctx.translate(this.x + jitterX + sway/2, this.y + jitterY + bob);
+                const s = sizeMult * (1.0 + (amp * 0.1)); 
+                ctx.scale(s, s);
+                const rot = (sway * 0.01) + ((Math.random()-0.5) * chaosLevel * 0.03);
+                ctx.rotate(rot);
+                this.renderSkeleton(ctx, amp);
+                ctx.restore();
+            }
+
+            renderSkeleton(ctx, amp) {
+                let isSoloing = JamManager.isSoloing(this.name);
+                ctx.strokeStyle = isSoloing ? '#fff8e1' : '#eaddcf';
+                ctx.fillStyle = isSoloing ? '#fff8e1' : '#eaddcf';
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                
+                const bone = (x1, y1, x2, y2) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); };
+                const skull = (x, y) => {
+                    ctx.save(); ctx.translate(x, y); ctx.rotate((Math.random()-0.5) * amp * 0.2); 
+                    ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI*2); ctx.fill(); ctx.fillRect(-9, 8, 18, 10); 
+                    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(-5, 2, 4, 0, Math.PI*2); ctx.arc(5, 2, 4, 0, Math.PI*2); ctx.fill();
+                    
+                    const glowAlpha = Math.min(1.0, 0.4 + (applauseCount * 0.05) + amp + (isSoloing ? 0.3 : 0));
+                    const eyeColor = chaosLevel > 5 ? `rgba(255, 50, 50, ${glowAlpha})` : `rgba(255, 200, 100, ${glowAlpha})`;
+                    ctx.fillStyle = eyeColor;
+                    const eyeSize = 2 + (applauseCount * 0.2);
+                    ctx.beginPath(); ctx.arc(-5, 2, eyeSize, 0, Math.PI*2); ctx.arc(5, 2, eyeSize, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#2b1d0e'; ctx.fillRect(-18, -12, 36, 4); ctx.fillRect(-12, -32, 24, 20);
+                    ctx.restore(); 
+                    ctx.strokeStyle = isSoloing ? '#fff8e1' : '#eaddcf';
+                    ctx.fillStyle = isSoloing ? '#fff8e1' : '#eaddcf';
+                };
+
+                ctx.save();
+                if(this.name === 'Drums') {
+                    ctx.fillStyle = '#3e2723'; ctx.fillRect(-30, 20, 60, 40); 
+                    const armL = Math.sin(Date.now()/100) * 20 * (1+amp);
+                    const armR = Math.cos(Date.now()/100) * 20 * (1+amp);
+                    bone(0, 0, -20, 10); bone(0, 0, 20, 10);
+                    bone(-20, 10, -40, 20 + armL); bone(20, 10, 40, 20 + armR);
+                    bone(0, 20, 0, -10); skull(0, -20);
+                } else if (this.name === 'Piano') {
+                    ctx.fillStyle = '#1a120b'; ctx.fillRect(-50, 10, 100, 10);
+                    bone(0, 0, -10, 30); bone(-5, 10, 20, 15); skull(0, -15);
+                } else {
+                    const walk = Math.sin(Date.now()/200) * 10;
+                    bone(0, 30, -10 + walk, 80); bone(0, 30, 10 - walk, 80);
+                    bone(0, 0, 0, 30); bone(-10, 5, -15, 25); bone(10, 5, 15, 25); bone(-10, 5, 10, 5); skull(0, -15);
+                    ctx.fillStyle = '#c19a6b';
+                    if(this.name === 'Bass') {
+                        ctx.fillStyle = '#3e2723'; ctx.beginPath(); ctx.ellipse(15, 30, 20, 50, -0.2, 0, Math.PI*2); ctx.fill(); ctx.fillRect(10, -50, 8, 100);
+                    } else if (this.name === 'Sax') {
+                        ctx.strokeStyle = '#DAA520'; ctx.lineWidth = 8; ctx.beginPath(); ctx.moveTo(5, 5); ctx.lineTo(5, 35); ctx.quadraticCurveTo(5, 50, 20, 40); ctx.stroke();
+                    } else if (this.name === 'Guitar') {
+                         ctx.translate(5, 20); ctx.rotate(-0.5); ctx.fillStyle = '#5d4037'; ctx.beginPath(); ctx.ellipse(0, 0, 15, 25, 0, 0, Math.PI*2); ctx.fill(); ctx.fillRect(-3, -40, 6, 40);
+                    } else if (this.name === 'Trumpet') {
+                        ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(25, -5); ctx.stroke();
+                    }
+                }
+                ctx.restore();
+            }
+        }
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = document.getElementById('canvas-container').offsetHeight;
+            height = canvas.height;
+            gears = []; for(let i=0; i<8; i++) gears.push(new Gear());
+            if(band.length > 0) {
+                band.forEach(m => { m.x = Math.max(40, Math.min(width-50, m.x)); m.y = Math.min(height-50, m.y); });
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = '#050404'; ctx.fillRect(0, 0, width, height);
+            gears.forEach(g => g.draw(ctx));
+
+            const grad = ctx.createLinearGradient(0, height*0.6, 0, height);
+            grad.addColorStop(0, '#15100d'); grad.addColorStop(1, '#2a1d15');
+            ctx.fillStyle = grad; ctx.fillRect(0, height*0.6, width, height*0.4);
+
+            ctx.save();
+            ctx.translate(0, height);
+            ctx.fillStyle = '#ffd700';
+            for(let i=0; i<piledMoney.length; i++) {
+                const p = piledMoney[i];
+                ctx.beginPath(); ctx.arc(p.x, -p.y, 6, 0, Math.PI*2); ctx.fill();
+            }
+            ctx.restore();
+
+            ctx.globalCompositeOperation = 'screen';
+            band.forEach(m => {
+                const amp = instruments[m.name.toLowerCase()].getAmplitude();
+                let r = 80 + amp * 120;
+                if (JamManager.isSoloing(m.name)) r *= 1.5;
+                
+                const light = ctx.createRadialGradient(m.x, m.y, 10, m.x, m.y, r);
+                const alpha = JamManager.isSoloing(m.name) ? 0.6 : 0.4;
+                light.addColorStop(0, `rgba(180, 140, 100, ${alpha})`);
+                light.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = light; ctx.beginPath(); ctx.arc(m.x, m.y, r, 0, Math.PI*2); ctx.fill();
+            });
+            ctx.globalCompositeOperation = 'source-over';
+
+            band.forEach(m => {
+                m.update(band);
+                const amp = instruments[m.name.toLowerCase()].getAmplitude();
+                m.draw(ctx, amp);
+            });
+
+            for(let i=fallingMoney.length-1; i>=0; i--) {
+                let m = fallingMoney[i];
+                m.update();
+                m.draw(ctx);
+                if(m.y > height - floorHeightOffset + Math.random()*20) {
+                    if(piledMoney.length < 300) piledMoney.push({x: m.x, y: height - m.y});
+                    fallingMoney.splice(i, 1);
+                } else if(m.y > height) {
+                    fallingMoney.splice(i, 1);
+                }
+            }
+
+            const vig = ctx.createRadialGradient(width/2, height/2, height/2, width/2, height/2, width);
+            vig.addColorStop(0, 'transparent'); vig.addColorStop(0.7, 'rgba(0,0,0,0.6)'); vig.addColorStop(1, 'rgba(0,0,0,0.95)');
+            ctx.fillStyle = vig; ctx.fillRect(0,0,width,height);
+
+            requestAnimationFrame(animate);
+        }
+
+        function initUI() {
+            const container = document.getElementById('mixer');
+            Object.keys(instruments).forEach(key => {
+                const inst = instruments[key];
+                const div = document.createElement('div');
+                div.className = 'track-control';
+                div.innerHTML = `<div class="track-name">${inst.name}</div><div class="slider-container"><input type="range" min="0" max="1" step="0.05" value="${inst.volume}"></div><button class="toggle-btn active">ON</button>`;
+                div.querySelector('input').oninput = (e) => inst.setVolume(parseFloat(e.target.value));
+                const btn = div.querySelector('button');
+                btn.onclick = () => {
+                    const isMuted = inst.toggleMute();
+                    btn.className = isMuted ? 'toggle-btn' : 'toggle-btn active';
+                    btn.innerText = isMuted ? 'OFF' : 'ON';
+                };
+                container.appendChild(div);
+            });
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            document.getElementById('start-overlay').style.display = 'none';
+            document.getElementById('controls').classList.remove('hidden');
+            
+            actx = new AudioContext();
+            masterGain = actx.createGain();
+            const conv = actx.createConvolver();
+            const len = actx.sampleRate * 2.0;
+            const buf = actx.createBuffer(2, len, actx.sampleRate);
+            for(let c=0;c<2;c++){ const d=buf.getChannelData(c); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2); }
+            conv.buffer = buf;
+            const dry = actx.createGain(); dry.gain.value = 0.8;
+            const wet = actx.createGain(); wet.gain.value = 0.2;
+            masterGain.connect(dry).connect(actx.destination);
+            masterGain.connect(wet).connect(conv).connect(actx.destination);
+
+            Object.values(instruments).forEach(i => i.init(actx, masterGain));
+            
+            resize();
+            window.addEventListener('resize', resize);
+            
+            band = [
+                new Musician('Drums'), new Musician('Bass'), new Musician('Piano'),
+                new Musician('Trumpet'), new Musician('Sax'), new Musician('Guitar')
+            ];
+            
+            initUI();
+            animate();
+            
+            isPlaying = true;
+            nextNoteTime = actx.currentTime + 0.1;
+            scheduler();
+        });
+
+        document.getElementById('applause-btn').addEventListener('mousedown', () => triggerApplause());
+
+    </script>
+</body>
+</html>
+
